@@ -6,7 +6,6 @@ export function Router() {
   const [hash, setHash] = useState('/');
 
   const handleHashChange = () => {
-  	console.log(window.location.hash);
     setHash(window.location.hash || '/');
   };
 
