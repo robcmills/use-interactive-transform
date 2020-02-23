@@ -1,4 +1,4 @@
-import React, {
+import {
 	useCallback,
 	useState,
 	MouseEvent,
@@ -9,12 +9,44 @@ import React, {
 // invoked manually by consumer's own native event handlers.
 type InteractiveEvent = SyntheticEvent | Event;
 
+type InteractiveWheelEvent = WheelEvent;
+
 interface Point {
 	x: number;
 	y: number;
 }
 
-export function useInteractiveTransform() {
+interface UseInteractiveTransformOptionsInterface {
+  maxScale: number;
+  minScale: number;
+  scaleRatio: number;
+}
+
+export const useInteractiveTransformDefaultOptions: UseInteractiveTransformOptionsInterface = {
+  maxScale: 10,
+  minScale: 0.1,
+  scaleRatio: 0.002,
+};
+
+interface UseInteractiveTransformArgsInterface {
+	container?: HTMLElement | null;
+	element?: HTMLElement | null;
+	options?: UseInteractiveTransformOptionsInterface;
+}
+
+// const getPanLimit = (scale: number, dimension: number) => (1 - 1 / scale) * dimension / 2;
+
+export function useInteractiveTransform({
+	container,
+	element,
+	options = useInteractiveTransformDefaultOptions,
+}: UseInteractiveTransformArgsInterface) {
+	const {
+    maxScale,
+    minScale,
+    scaleRatio,
+  } = options;
+
   const [isPanning, setIsPanning] = useState(false);
   const [panStartX, setPanStartX] = useState(0);
   const [panStartY, setPanStartY] = useState(0);
@@ -36,7 +68,6 @@ export function useInteractiveTransform() {
     setPanStartY(0);
     setPrevTranslateX(0);
     setPrevTranslateY(0);
-
     // setIsZooming(false);
     // setTouches([]);
     // setZoomStartDistance(1);
@@ -87,14 +118,96 @@ export function useInteractiveTransform() {
     endInteraction();
   }, [endInteraction]);
 
+//   const constrain = ({ targetScale, targetX, targetY }: {
+//   	targetScale: number;
+//   	targetX: number;
+//   	targetY: number;
+//   }) => {
+//     let x = targetX;
+//     let y = targetY;
+//
+//     const xLimit = element
+//       ? getPanLimit(targetScale, element.clientWidth)
+//       : 0;
+//     if (x > xLimit) {
+//       x = xLimit;
+//     } else if (x < -xLimit) {
+//       x = -xLimit;
+//     }
+//     const yLimit = element
+//     	? getPanLimit(targetScale, element.clientHeight)
+//     	: 0;
+//     if (y > yLimit) {
+//       y = yLimit;
+//     } else if (y < -yLimit) {
+//       y = -yLimit;
+//     }
+//
+//     return { x, y };
+//   };
+
+  const translateTo = useCallback(({ targetScale, targetX, targetY }) => {
+    // const { x, y } = constrain({
+    //   targetScale,
+    //   targetX,
+    //   targetY,
+    // });
+    setScale(targetScale);
+    setTranslateX(targetX);
+    setTranslateY(targetY);
+  }, []);
+
+  const zoomTo = useCallback((targetScale: number) => {
+    translateTo({
+      targetScale,
+      targetX: translateX,
+      targetY: translateY,
+    });
+  }, [translateTo, translateX, translateY]);
+
+  const onWheel = useCallback(event => {
+    const eventX = event.clientX;
+    const eventY = event.clientY;
+    const targetScale = Math.min(
+      Math.max(scale - event.deltaY * scaleRatio, minScale),
+      maxScale
+    );
+    if (!container) {
+      zoomTo(targetScale);
+      return;
+    }
+    const mult = targetScale / scale;
+    const containerRect = container.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    const x = eventX - centerX;
+    const y = eventY - centerY;
+    const targetX = translateX - (x * mult - x) / targetScale;
+    const targetY = translateY - (y * mult - y) / targetScale;
+    translateTo({
+      targetScale,
+      targetX,
+      targetY,
+    });
+  }, [container, maxScale, minScale, scale, scaleRatio, translateX, translateY, translateTo, zoomTo]);
+
+  const transformStyle = (
+    `scale(${scale}) ` +
+    `translate(${translateX}px, ${translateY}px)`
+  );
+
 	return {
 		handlers: {
 			onMouseDown,
       onMouseLeave,
       onMouseMove,
       onMouseUp,
+      onWheel,
 		},
+		transformStyle,
 		translateX,
 		translateY,
+		scale,
+		zoomTo,
 	};
 }
