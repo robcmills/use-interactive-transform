@@ -1,4 +1,5 @@
 import React, {
+	useCallback,
 	useState,
 	MouseEvent,
 	SyntheticEvent,
@@ -14,7 +15,6 @@ interface Point {
 }
 
 export function useInteractiveTransform() {
-
   const [isPanning, setIsPanning] = useState(false);
   const [panStartX, setPanStartX] = useState(0);
   const [panStartY, setPanStartY] = useState(0);
@@ -30,7 +30,7 @@ export function useInteractiveTransform() {
   // const [zoomStartDistance, setZoomStartDistance] = useState(1);
   // const [zoomStartScale, setZoomStartScale] = useState(1);
 
-	const endInteraction = () => {
+	const endInteraction = useCallback(() => {
     setIsPanning(false);
     setPanStartX(0);
     setPanStartY(0);
@@ -41,18 +41,18 @@ export function useInteractiveTransform() {
     // setTouches([]);
     // setZoomStartDistance(1);
     // setZoomStartScale(1);
-  };
+  }, []);
 
-	const handlePanStart = ({ x, y }: Point) => {
+	const handlePanStart = useCallback(({ x, y }: Point) => {
     setIsPanning(true);
     setPanStartX(x);
     setPanStartY(y);
     setPrevTranslateX(translateX);
     setPrevTranslateY(translateY);
     // setTouches([{ screenX, screenY }]);
-  };
+  }, [translateX, translateY]);
 
-  const handlePanMove = ({ x, y }: Point) => {
+  const handlePanMove = useCallback(({ x, y }: Point) => {
     const offsetX = x - panStartX;
     const offsetY = y - panStartY;
     const targetX = prevTranslateX + offsetX / scale;
@@ -60,22 +60,20 @@ export function useInteractiveTransform() {
     // const { x, y } = constrain({ scale: state.scale, targetX, targetY });
     setTranslateX(targetX);
     setTranslateY(targetY);
-  };
+  }, [panStartX, panStartY, prevTranslateX, prevTranslateY, scale]);
 
-	const onMouseDown = (event: MouseEvent) => {
-		console.log('onMouseDown');
+	const onMouseDown = useCallback((event: MouseEvent) => {
     handlePanStart({
       x: event.screenX,
       y: event.screenY,
     });
-  };
+  }, [handlePanStart]);
 
-  const onMouseLeave = () => {
+  const onMouseLeave = useCallback(() => {
     endInteraction();
-  };
+  }, [endInteraction]);
 
-  const onMouseMove = (event: MouseEvent) => {
-		console.log('onMouseMove', isPanning);
+  const onMouseMove = useCallback((event: MouseEvent) => {
     if (!isPanning) {
       return;
     }
@@ -83,12 +81,11 @@ export function useInteractiveTransform() {
       x: event.screenX,
       y: event.screenY,
     });
-  };
+  }, [handlePanMove, isPanning]);
 
-  const onMouseUp = () => {
-		console.log('onMouseUp');
+  const onMouseUp = useCallback(() => {
     endInteraction();
-  };
+  }, [endInteraction]);
 
 	return {
 		handlers: {

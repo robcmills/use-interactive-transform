@@ -7,7 +7,6 @@ import reactLogo from '../logo.svg';
 import { useInteractiveTransform } from '../../../useInteractiveTransform';
 
 export function BasicExampleRoute() {
-
   const { handlers, translateX, translateY } = useInteractiveTransform();
 
   const transform = (
