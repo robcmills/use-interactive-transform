@@ -25,13 +25,21 @@
   },
   "description": "React hook for zoom, pan and more",
   "devDependencies": {
+    "@types/classnames": "^2.2.9",
+    "classnames": "^2.2.6",
     "typescript": "^3.7.5"
   },
   "eslintConfig": {
     "extends": "react-app"
   },
   "homepage": "https://github.com/robcmills/use-interactive-transform#readme",
-  "keywords": ["react", "reactjs", "hook", "zoom", "pan"],
+  "keywords": [
+    "react",
+    "reactjs",
+    "hook",
+    "zoom",
+    "pan"
+  ],
   "license": "ISC",
   "main": "index.js",
   "name": "use-interactive-transform",
